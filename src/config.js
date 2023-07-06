@@ -9,13 +9,21 @@ const baseWebhookURL = process.env.BASE_WEBHOOK_URL
 const maxAttachmentSize = parseInt(process.env.MAX_ATTACHMENT_SIZE) || 10000000
 const setMessagesAsSeen = process.env.SET_MESSAGES_AS_SEEN === 'TRUE'
 const disabledCallbacks = process.env.DISABLED_CALLBACKS ? process.env.DISABLED_CALLBACKS.split('|') : []
+const serverPort = process.env.PORT || 3001
+const chromeBin = process.env.CHROME_BIN || null
 
-module.exports = {
+const config = {
   sessionFolderPath,
   enableLocalCallbackExample,
   globalApiKey,
   baseWebhookURL,
   maxAttachmentSize,
   setMessagesAsSeen,
-  disabledCallbacks
+  disabledCallbacks,
+  serverPort,
+  chromeBin
 }
+
+// console.debug({ config })
+
+module.exports = config

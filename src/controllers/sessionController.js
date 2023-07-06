@@ -1,6 +1,25 @@
-
 const { setupSession, deleteSession, validateSession, flushSessions } = require('../sessions')
 const { sendErrorResponse, waitForNestedObject } = require('../utils')
+
+/**
+ * Validate a session for the given session ID.
+ *
+ * @function
+ * @async
+ * @param {Object} req - The HTTP request object.
+ * @param {Object} res - The HTTP response object.
+ * @param {string} req.params.sessionId - The session ID to start.
+ * @returns {Promise<void>}
+ * @throws {Error} If there was an error starting the session.
+ */
+const verifySession = async (req, res) => {
+  try {
+    res.json({ success: true, message: 'Session initialized!' })
+  } catch (error) {
+    console.log('startSession ERROR', error)
+    sendErrorResponse(res, 500, error)
+  }
+}
 
 /**
  * Starts a session for the given session ID.
@@ -90,6 +109,7 @@ const terminateAllSessions = async (req, res) => {
 }
 
 module.exports = {
+  verifySession,
   startSession,
   terminateSession,
   terminateInactiveSessions,

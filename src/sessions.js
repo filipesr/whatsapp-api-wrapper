@@ -1,7 +1,7 @@
 const { Client, LocalAuth } = require('whatsapp-web.js')
 const fs = require('fs')
 const sessions = new Map()
-const { sessionFolderPath, maxAttachmentSize, setMessagesAsSeen } = require('./config')
+const { sessionFolderPath, maxAttachmentSize, setMessagesAsSeen, chromeBin } = require('./config')
 const { triggerWebhook, waitForNestedObject, checkIfEventisEnabled } = require('./utils')
 
 // Function to validate if the session is ready
@@ -87,7 +87,7 @@ const setupSession = (sessionId) => {
 
     const client = new Client({
       puppeteer: {
-        executablePath: process.env.CHROME_BIN || null,
+        executablePath: chromeBin,
         // headless: false,
         args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--disable-dev-shm-usage']
       },
@@ -288,6 +288,7 @@ const deleteSession = async (sessionId, validation) => {
     }
     await deleteSessionFolder(sessionId)
     sessions.delete(sessionId)
+    triggerWebhook(sessionId, 'terminate', {})
   } catch (error) {
     console.log(error)
     throw error
