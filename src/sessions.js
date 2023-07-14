@@ -272,6 +272,10 @@ const deleteSessionFolder = async (sessionId) => {
 const deleteSession = async (sessionId, validation) => {
   try {
     const client = sessions.get(sessionId)
+    if (!client) {
+      console.log(`Session ${sessionId} not founded!`)
+      return false
+    }
     if (validation.success) {
       // Client Connected, request logout
       console.log(`Logging out session ${sessionId}`)
