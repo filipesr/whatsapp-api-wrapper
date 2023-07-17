@@ -1,8 +1,25 @@
-const { Client, LocalAuth } = require('whatsapp-web.js')
+const { MongoStore } = require('wwebjs-mongo')
+const mongoose = require('mongoose')
+const { Client, RemoteAuth } = require('whatsapp-web.js')
 const fs = require('fs')
 const sessions = new Map()
 const { sessionFolderPath, maxAttachmentSize, setMessagesAsSeen, chromeBin } = require('./config')
 const { triggerWebhook, waitForNestedObject, checkIfEventisEnabled } = require('./utils')
+
+mongoose.connect(process.env.MONGO_URI)
+const db = mongoose.connection
+
+let store
+
+db.on('error', (error) => {
+  console.debug({ error })
+})
+
+db.once('connected', () => {
+  console.log('Database Connected')
+  store = new MongoStore({ mongoose })
+  restoreSessions()
+})
 
 // Function to validate if the session is ready
 const validateSession = async (sessionId) => {
@@ -49,24 +66,29 @@ const validateSession = async (sessionId) => {
 }
 
 // Function to handle client session restoration
-const restoreSessions = () => {
+const restoreSessions = async () => {
   try {
     if (!fs.existsSync(sessionFolderPath)) {
       fs.mkdirSync(sessionFolderPath) // Create the session directory if it doesn't exist
-    }
-    // Read the contents of the folder
-    fs.readdir(sessionFolderPath, (_, files) => {
-      // Iterate through the files in the parent folder
-      for (const file of files) {
-        // Use regular expression to extract the string from the folder name
-        const match = file.match(/^session-(.+)$/)
-        if (match) {
-          const sessionId = match[1]
-          console.log('existing session detected', sessionId)
-          setupSession(sessionId)
+    } else {
+      // Read the contents of the folder
+      fs.readdir(sessionFolderPath, async (_, files) => {
+        // Iterate through the files in the parent folder
+        for (const file of files) {
+          // Use regular expression to extract the string from the folder name
+          const match = file.match(/^RemoteAuth-(.+)$/)
+          if (match) {
+            const sessionId = match[1]
+            if (await store.sessionExists({ session: `RemoteAuth-${sessionId}` })) {
+              console.log('existing session on RemoteAuth', sessionId)
+              // fs.rmdirSync(file)
+              // await store.extract({ session: sessionId, path: sessionFolderPath })
+              setupSession(sessionId)
+            } else console.log('session does not exist on RemoteAuth', sessionId)
+          }
         }
-      }
-    })
+      })
+    }
   } catch (error) {
     console.log(error)
     console.error('Failed to restore sessions:', error)
@@ -74,16 +96,24 @@ const restoreSessions = () => {
 }
 
 // Setup Session
-const setupSession = (sessionId) => {
+const setupSession = async (sessionId) => {
   try {
     if (sessions.has(sessionId)) {
       return { success: false, message: `Session already exists for: ${sessionId}`, client: sessions.get(sessionId) }
     }
 
     // Disable the delete folder from the logout function (will be handled separately)
-    const localAuth = new LocalAuth({ clientId: sessionId, dataPath: sessionFolderPath })
-    delete localAuth.logout
-    localAuth.logout = () => { }
+    const authStrategy = new RemoteAuth({
+      store,
+      clientId: sessionId,
+      dataPath: sessionFolderPath,
+      backupSyncIntervalMs: 600000
+    })
+    delete authStrategy.logout
+    authStrategy.logout = async () => { await store.delete({ session: sessionId }) }
+    // const localAuth = new LocalAuth({ clientId: sessionId, dataPath: sessionFolderPath })
+    // delete localAuth.logout
+    // localAuth.logout = () => { }
 
     const client = new Client({
       puppeteer: {
@@ -92,7 +122,7 @@ const setupSession = (sessionId) => {
         args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--disable-dev-shm-usage']
       },
       userAgent: 'Mozilla/5.0 (X11 Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.54 Safari/537.36',
-      authStrategy: localAuth
+      authStrategy
     })
 
     client.initialize().catch(err => console.log('Initialize error:', err.message))
@@ -108,6 +138,10 @@ const setupSession = (sessionId) => {
 }
 
 const initializeEvents = (client, sessionId) => {
+  client.on('remote_session_saved', () => {
+    console.log(sessionId, 'remote_session_saved')
+  })
+
   checkIfEventisEnabled('auth_failure')
     .then(_ => {
       client.on('auth_failure', (msg) => {
@@ -117,9 +151,17 @@ const initializeEvents = (client, sessionId) => {
 
   checkIfEventisEnabled('authenticated')
     .then(_ => {
-      client.on('authenticated', () => {
-        triggerWebhook(sessionId, 'authenticated')
-      })
+      try {
+        client.on('authenticated', (data) => {
+          // console.debug(data)
+          // fs.writeFile(`${sessionFolderPath}/${sessionId}.json`, JSON.stringify(data), (err) => {
+          //   if (err) console.error(err)
+          // })
+          triggerWebhook(sessionId, 'authenticated')
+        })
+      } catch (error) {
+        console.debug(error)
+      }
     })
 
   checkIfEventisEnabled('call')
@@ -238,7 +280,8 @@ const initializeEvents = (client, sessionId) => {
 
   checkIfEventisEnabled('ready')
     .then(_ => {
-      client.on('ready', () => {
+      client.on('ready', (data) => {
+        // console.debug(data)
         triggerWebhook(sessionId, 'ready')
       })
     })
@@ -254,14 +297,14 @@ const initializeEvents = (client, sessionId) => {
 // Function to check if folder is writeable
 const deleteSessionFolder = async (sessionId) => {
   try {
-    const targetDirPath = `${sessionFolderPath}/session-${sessionId}/`
-    const resolvedTargetDirPath = await fs.promises.realpath(targetDirPath)
-    const resolvedSessionPath = await fs.promises.realpath(sessionFolderPath)
-    // Check if the target directory path is a subdirectory of the sessions folder path
-    if (!resolvedTargetDirPath.startsWith(resolvedSessionPath)) {
-      throw new Error('Invalid path')
-    }
-    await fs.promises.rm(targetDirPath, { recursive: true, force: true })
+    // const targetDirPath = `${sessionFolderPath}/session-${sessionId}/`
+    // const resolvedTargetDirPath = await fs.promises.realpath(targetDirPath)
+    // const resolvedSessionPath = await fs.promises.realpath(sessionFolderPath)
+    // // Check if the target directory path is a subdirectory of the sessions folder path
+    // if (!resolvedTargetDirPath.startsWith(resolvedSessionPath)) {
+    //   throw new Error('Invalid path')
+    // }
+    // await fs.promises.rm(targetDirPath, { recursive: true, force: true })
   } catch (error) {
     console.log('Folder deletion error', error)
     throw error
@@ -302,20 +345,20 @@ const deleteSession = async (sessionId, validation) => {
 // Function to handle session flush
 const flushSessions = async (deleteOnlyInactive) => {
   try {
-    // Read the contents of the sessions folder
-    const files = await fs.promises.readdir(sessionFolderPath)
-    // Iterate through the files in the parent folder
-    for (const file of files) {
-      // Use regular expression to extract the string from the folder name
-      const match = file.match(/^session-(.+)$/)
-      if (match && match[1]) {
-        const sessionId = match[1]
-        const validation = await validateSession(sessionId)
-        if (!deleteOnlyInactive || !validation.success) {
-          await deleteSession(sessionId, validation)
-        }
-      }
-    }
+    // // Read the contents of the sessions folder
+    // const files = await fs.promises.readdir(sessionFolderPath)
+    // // Iterate through the files in the parent folder
+    // for (const file of files) {
+    //   // Use regular expression to extract the string from the folder name
+    //   const match = file.match(/^session-(.+)$/)
+    //   if (match && match[1]) {
+    //     const sessionId = match[1]
+    //     const validation = await validateSession(sessionId)
+    //     if (!deleteOnlyInactive || !validation.success) {
+    //       await deleteSession(sessionId, validation)
+    //     }
+    //   }
+    // }
   } catch (error) {
     console.log(error)
     throw error

@@ -11,6 +11,6 @@ app.use(bodyParser.json({ limit: maxAttachmentSize + 1000000 }))
 app.use(bodyParser.urlencoded({ limit: maxAttachmentSize + 1000000, extended: true }))
 app.use('/', routes)
 
-restoreSessions()
+// restoreSessions()
 
 module.exports = app
