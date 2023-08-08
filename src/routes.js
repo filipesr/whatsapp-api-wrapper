@@ -39,6 +39,7 @@ sessionRouter.get('/start/:sessionId', middleware.sessionNameValidation, session
 sessionRouter.get('/terminate/:sessionId', middleware.sessionNameValidation, sessionController.terminateSession)
 sessionRouter.get('/terminateInactive', sessionController.terminateInactiveSessions)
 sessionRouter.get('/terminateAll', sessionController.terminateAllSessions)
+sessionRouter.get('/list', sessionController.list)
 
 /**
  * ================

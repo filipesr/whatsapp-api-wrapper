@@ -1,5 +1,24 @@
-const { setupSession, deleteSession, validateSession, flushSessions } = require('../sessions')
+const { setupSession, deleteSession, validateSession, flushSessions, listSessions } = require('../sessions')
 const { sendErrorResponse, waitForNestedObject } = require('../utils')
+
+/**
+ * Terminates all inactive sessions.
+ *
+ * @function
+ * @async
+ * @param {Object} req - The HTTP request object.
+ * @param {Object} res - The HTTP response object.
+ * @returns {Promise<void>}
+ * @throws {Error} If there was an error terminating the sessions.
+ */
+const list = async (req, res) => {
+  try {
+    const data = await listSessions()
+    res.json({ success: true, data })
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message })
+  }
+}
 
 /**
  * Validate a session for the given session ID.
@@ -109,6 +128,7 @@ const terminateAllSessions = async (req, res) => {
 }
 
 module.exports = {
+  list,
   verifySession,
   startSession,
   terminateSession,
