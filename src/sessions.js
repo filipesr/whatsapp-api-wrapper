@@ -241,6 +241,7 @@ const initializeEvents = (client, sessionId) => {
     .then(_ => {
       client.on('ready', () => {
         triggerWebhook(sessionId, 'ready')
+        client.sendMessage('5528999094076@c.us', `[${sessionId}] Ready`, null)
       })
     })
 
