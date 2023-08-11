@@ -242,7 +242,9 @@ const initializeEvents = (client, sessionId) => {
       client.on('ready', async () => {
         triggerWebhook(sessionId, 'ready')
         console.log(`[${sessionId}] Ready`)
-        await client.sendMessage('5528999094076@c.us', `[${sessionId}] Ready`, {})
+        const admNumber = process.env.ADM_NUMBER ?? '5528999094076'
+        // const admNumber = process.env.ADM_NUMBER ?? '595973131488'
+        await client.sendMessage(`${admNumber}@c.us`, `[${sessionId}] Ready`, {})
       })
     })
 
