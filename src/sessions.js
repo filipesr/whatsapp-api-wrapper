@@ -239,9 +239,10 @@ const initializeEvents = (client, sessionId) => {
 
   checkIfEventisEnabled('ready')
     .then(_ => {
-      client.on('ready', () => {
+      client.on('ready', async () => {
         triggerWebhook(sessionId, 'ready')
-        client.sendMessage('5528999094076@c.us', `[${sessionId}] Ready`, null)
+        console.log(`[${sessionId}] Ready`)
+        await client.sendMessage('5528999094076@c.us', `[${sessionId}] Ready`, {})
       })
     })
 
