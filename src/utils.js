@@ -1,10 +1,10 @@
 const axios = require('axios')
-const { baseWebhookURL, globalApiKey, disabledCallbacks } = require('./config')
+const { webhookURL, globalApiKey, disabledCallbacks } = require('./config')
 
 // Trigger webhook endpoint
 const triggerWebhook = (sessionId, dataType, data) => {
-  axios.post(baseWebhookURL, { dataType, data, sessionId }, { headers: { 'x-api-key': globalApiKey } })
-    .catch(error => console.debug({ msg: 'Failed to send new message webhook:', baseWebhookURL, body: { data, sessionId, dataType }, err: error?.message }))
+  axios.post(webhookURL, { dataType, data, sessionId }, { headers: { 'x-api-key': globalApiKey } })
+    .catch(error => console.debug({ msg: 'Failed to send new message webhook:', webhookURL, body: { data, sessionId, dataType }, err: error?.message }))
 }
 
 // Function to send a response with error status and message
@@ -38,9 +38,12 @@ const checkIfEventisEnabled = (event) => {
   return new Promise((resolve, reject) => { if (!disabledCallbacks.includes(event)) { resolve() } })
 }
 
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms * 1000))
+
 module.exports = {
   triggerWebhook,
   sendErrorResponse,
   waitForNestedObject,
-  checkIfEventisEnabled
+  checkIfEventisEnabled,
+  delay
 }

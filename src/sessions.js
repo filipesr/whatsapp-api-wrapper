@@ -3,6 +3,7 @@ const fs = require('fs')
 const sessions = new Map()
 const { sessionFolderPath, maxAttachmentSize, setMessagesAsSeen, chromeBin } = require('./config')
 const { triggerWebhook, waitForNestedObject, checkIfEventisEnabled } = require('./utils')
+const { createSchedule } = require('./cron')
 
 // Function to validate if the session is ready
 const validateSession = async (sessionId) => {
@@ -102,6 +103,8 @@ const setupSession = (sessionId) => {
     // Save the session to the Map
     sessions.set(sessionId, client)
     console.log('Session initiated successfully')
+    // Create schedule to send message
+    createSchedule(sessionId)
     return { success: true, message: 'Session initiated successfully', client }
   } catch (error) {
     return { success: false, message: error.message, client: null }
