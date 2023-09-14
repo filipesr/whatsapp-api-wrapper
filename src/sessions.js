@@ -1,6 +1,7 @@
 const { Client, LocalAuth } = require('whatsapp-web.js')
 const fs = require('fs')
 const sessions = new Map()
+const schedulesJob = new Map()
 const { sessionFolderPath, maxAttachmentSize, setMessagesAsSeen, chromeBin } = require('./config')
 const { triggerWebhook, waitForNestedObject, checkIfEventisEnabled } = require('./utils')
 const { createSchedule } = require('./cron')
@@ -247,7 +248,7 @@ const initializeEvents = (client, sessionId) => {
         // const admNumber = process.env.ADM_NUMBER ?? '595973131488'
         client.sendMessage(`${admNumber}@c.us`, `[${sessionId}] Ready`, {})
         // Create schedule to send message
-        createSchedule(sessionId)
+        schedulesJob.set(sessionId, createSchedule(sessionId))
       })
     })
 
@@ -300,6 +301,8 @@ const deleteSession = async (sessionId, validation) => {
     }
     await deleteSessionFolder(sessionId)
     sessions.delete(sessionId)
+    // delete schedule to send message
+    schedulesJob.delete(sessionId)?.cancel()
     triggerWebhook(sessionId, 'terminate', {})
   } catch (error) {
     console.log(error)

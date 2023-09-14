@@ -40,8 +40,8 @@ const sendNext = async (idAgent) => {
 }
 
 const createSchedule = (idAgent) => {
-  schedule.scheduleJob({ rule: '*/5 * * * * *' }, () => sendNext(idAgent))
   console.log(`Agent ${idAgent} scheduled...`)
+  return schedule.scheduleJob({ rule: '*/5 * * * * *' }, () => sendNext(idAgent))
 }
 
 module.exports = {
