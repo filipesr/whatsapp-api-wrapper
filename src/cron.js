@@ -18,7 +18,9 @@ const sendMessage = async (client, chatId, content) => {
 const callSetMessageStatus = async (id, status) => await axios.get(urlSetMessageStatus(id, status))
 
 const sendNext = async (idAgent) => {
+  // console.log(`Runing sendNext on agent ${idAgent}...`)
   const { message } = await callGetMessage(idAgent)
+  if (!message) return false
   const { id, texts, phone, timeToWait } = message
   const client = sessions.get(idAgent)
 
@@ -37,7 +39,10 @@ const sendNext = async (idAgent) => {
   return true
 }
 
-const createSchedule = (idAgent) => schedule.scheduleJob({ rule: '*/5 * * * * *' }, () => sendNext(idAgent))
+const createSchedule = (idAgent) => {
+  schedule.scheduleJob({ rule: '*/5 * * * * *' }, () => sendNext(idAgent))
+  console.log(`Agent ${idAgent} scheduled...`)
+}
 
 module.exports = {
   createSchedule

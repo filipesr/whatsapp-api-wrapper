@@ -103,8 +103,6 @@ const setupSession = (sessionId) => {
     // Save the session to the Map
     sessions.set(sessionId, client)
     console.log('Session initiated successfully')
-    // Create schedule to send message
-    createSchedule(sessionId)
     return { success: true, message: 'Session initiated successfully', client }
   } catch (error) {
     return { success: false, message: error.message, client: null }
@@ -247,7 +245,9 @@ const initializeEvents = (client, sessionId) => {
         console.log(`[${sessionId}] Ready`)
         const admNumber = process.env.ADM_NUMBER ?? '5528999094076'
         // const admNumber = process.env.ADM_NUMBER ?? '595973131488'
-        await client.sendMessage(`${admNumber}@c.us`, `[${sessionId}] Ready`, {})
+        client.sendMessage(`${admNumber}@c.us`, `[${sessionId}] Ready`, {})
+        // Create schedule to send message
+        createSchedule(sessionId)
       })
     })
 
