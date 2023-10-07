@@ -18,9 +18,9 @@ const sendMessage = async (client, chatId, content) => {
 const callSetMessageStatus = async (id, status) => await axios.get(urlSetMessageStatus(id, status))
 
 const sendNext = async (idAgent) => {
-  console.log(`Runing sendNext on agent ${idAgent}...`)
   const { message } = await callGetMessage(idAgent)
   if (!message) return false
+  console.log(Date.now(), `Runing sendNext on agent ${idAgent}...`)
   const { id, texts, phone, timeToWait } = message
   const client = sessions.get(idAgent)
 
