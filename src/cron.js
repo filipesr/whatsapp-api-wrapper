@@ -16,15 +16,24 @@ const urlSendMessage = (idAgent) => `http://localhost:${serverPort}/client/sendM
 
 const callGetAgentStatus = async (idAgent) => {
   await axios
-    .get({ method: 'GET', url: urlAgentStatus(idAgent), headers: { 'x-api-key': globalApiKey } })
+    .request({ method: 'GET', url: urlAgentStatus(idAgent), headers: { 'x-api-key': globalApiKey } })
     .then((data) => {
       if (DEBUG) console.debug({ date: Date.now(), idAgent, data })
       return data?.message === 'Session initialized!'
     })
-    .catch(() => false)
+    .catch((error) => {
+      if (DEBUG) console.debug({ date: Date.now(), idAgent, error })
+      return false
+    })
 }
 
-const callGetMessage = async (idAgent) => await axios.get(urlGetMessage(idAgent)).then(({ data }) => data)
+const callGetMessage = async (idAgent) => await axios
+  .get(urlGetMessage(idAgent))
+  .then(({ data }) => data)
+  .catch((error) => {
+    if (DEBUG) console.debug({ date: Date.now(), idAgent, error })
+    return false
+  })
 const callSendMessage = async (idAgent, chatId, content, contentType = 'string') => {
   if (DEBUG) console.log(Date.now(), `[${idAgent}]: sending message "${content}"`)
   const options = {
@@ -33,7 +42,13 @@ const callSendMessage = async (idAgent, chatId, content, contentType = 'string')
     headers: { 'x-api-key': globalApiKey, 'Content-Type': 'application/json' },
     data: { chatId: `${chatId}@g.us`, contentType, content }
   }
-  return await axios.request(options).then(({ success }) => success ?? false).catch(() => false)
+  return await axios
+    .request(options)
+    .then(({ success }) => success ?? false)
+    .catch((error) => {
+      if (DEBUG) console.debug({ date: Date.now(), idAgent, error })
+      return false
+    })
 }
 const callSetMessageStatus = (id, status) => axios.get(urlSetMessageStatus(id, status))
 
