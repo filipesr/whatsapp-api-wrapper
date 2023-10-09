@@ -14,7 +14,15 @@ const urlSendMessage = (idAgent) => `http://localhost:${serverPort}/client/sendM
 // const callUrl = async (url) => axios.get(url).then((response) => console.log(response?.data?.data ?? ''))
 // const sendNext = async () => callUrl('https://sendgo-api.vercel.app/message/sendnext/oupuXQrm5Vc6u6qBSV2KWatY9UoLmSaj')
 
-const callGetAgentStatus = async (idAgent) => await axios.get({ method: 'GET', url: urlAgentStatus(idAgent), headers: { 'x-api-key': globalApiKey } }).then(({ success }) => success ?? false).catch(() => false)
+const callGetAgentStatus = async (idAgent) => {
+  await axios
+    .get({ method: 'GET', url: urlAgentStatus(idAgent), headers: { 'x-api-key': globalApiKey } })
+    .then((data) => {
+      if (DEBUG) console.debug({ date: Date.now(), idAgent, data })
+      return data?.message === 'Session initialized!'
+    })
+    .catch(() => false)
+}
 
 const callGetMessage = async (idAgent) => await axios.get(urlGetMessage(idAgent)).then(({ data }) => data)
 const callSendMessage = async (idAgent, chatId, content, contentType = 'string') => {
