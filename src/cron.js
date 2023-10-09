@@ -1,7 +1,7 @@
 const schedule = require('node-schedule')
 const axios = require('axios') // legacy way
 const { apiURL, sendNextApiKey } = require('./config')
-const { sessions } = require('./sessions')
+// const { sessions } = require('./sessions')
 const { delay } = require('./utils')
 
 const urlGetMessage = (idAgent) => `${apiURL}/message/getnext/${sendNextApiKey}/${idAgent}`
@@ -17,8 +17,7 @@ const sendMessage = async (client, chatId, content) => {
 }
 const callSetMessageStatus = async (id, status) => await axios.get(urlSetMessageStatus(id, status))
 
-const getNextMessageAndSend = async (idAgent, send) => {
-  if (!sessions || !sessions.has(idAgent)) return false
+const getNextMessageAndSend = async (client, idAgent, send) => {
   // const { message } = await callGetMessage(idAgent)
   const { data } = await callGetMessage(idAgent)
   console.debug({ data, text: data.text, message: data.message })
@@ -30,7 +29,6 @@ const getNextMessageAndSend = async (idAgent, send) => {
   }
 
   const { id, texts, phone, timeToWait } = message
-  const client = send ? sessions.get(idAgent) : null
 
   texts.forEach(async (content) => {
     const success = send ? await sendMessage(client, `${phone}@c.us`, content).then(({ success }) => success) : true
@@ -47,9 +45,9 @@ const getNextMessageAndSend = async (idAgent, send) => {
   return true
 }
 
-const createSchedule = (idAgent, send = true) => {
+const createSchedule = (client, idAgent, send = true) => {
   console.log(`Agent ${idAgent} scheduled...`)
-  return schedule.scheduleJob({ rule: '*/5 * * * * *' }, async () => getNextMessageAndSend(idAgent, send))
+  return schedule.scheduleJob({ rule: '*/5 * * * * *' }, async () => getNextMessageAndSend(client, idAgent, send))
 }
 
 module.exports = {
