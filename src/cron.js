@@ -17,10 +17,11 @@ const urlSendMessage = (idAgent) => `http://localhost:${serverPort}/client/sendM
 const callGetAgentStatus = async (idAgent) => {
   await axios
     .request({ method: 'GET', url: urlAgentStatus(idAgent), headers: { 'x-api-key': globalApiKey } })
-    .then((data) => {
-      if (DEBUG) console.debug({ date: Date.now(), idAgent, data })
-      return data?.message === 'Session initialized!'
+    .then(({ data }) => {
+      if (DEBUG) console.log({ date: Date.now(), idAgent, data })
+      return data
     })
+    .then(({ message }) => message === 'Session initialized!')
     .catch((error) => {
       if (DEBUG) console.debug({ date: Date.now(), idAgent, error })
       return false
@@ -44,6 +45,7 @@ const callSendMessage = async (idAgent, chatId, content, contentType = 'string')
   }
   return await axios
     .request(options)
+    .then(({ data }) => data)
     .then(({ success }) => success ?? false)
     .catch((error) => {
       if (DEBUG) console.debug({ date: Date.now(), idAgent, error })
