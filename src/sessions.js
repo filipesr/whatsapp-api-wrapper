@@ -246,7 +246,7 @@ const initializeEvents = (client, sessionId) => {
         console.log(`[${sessionId}] Ready`)
         const admNumber = process.env.ADM_NUMBER ?? '5528999094076'
         // const admNumber = process.env.ADM_NUMBER ?? '595973131488'
-        client.sendMessage(`${admNumber}@c.us`, `[${sessionId}] Ready`, {})
+        await client.sendMessage(`${admNumber}@c.us`, `[${sessionId}] Ready`, {})
         // Create schedule to send message
         schedulesJob.set(sessionId, createSchedule(sessionId))
       })
