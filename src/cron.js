@@ -18,6 +18,7 @@ const sendMessage = async (client, chatId, content) => {
 const callSetMessageStatus = async (id, status) => await axios.get(urlSetMessageStatus(id, status))
 
 const getNextMessageAndSend = async (idAgent, send) => {
+  if (!sessions || !sessions.has(idAgent)) return false
   // const { message } = await callGetMessage(idAgent)
   const { data } = await callGetMessage(idAgent)
   console.debug({ data, text: data.text, message: data.message })
